@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Game</title>
+    <style>
+        @keyframes fall {
+            0% {
+                transform: translateY(-100vh);
+            }
+
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+
+        .raindrop {
+            position: absolute;
+            top: -10px;
+            width: 2px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            animation: fall linear infinite;
+        }
+
+        #rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            /* Supaya hujan tidak mengganggu interaksi pengguna */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('https://i.pinimg.com/736x/49/21/e3/4921e3b0f4b3d9f9237989cdf70f989e.jpg') no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        #header {
+            width: 100%;
+            height: 50px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        #header h1 {
+            font-size: 34px;
+            white-space: nowrap;
+            animation: slide 12s linear infinite, color-change 1s linear infinite;
+        }
+
+        @keyframes slide {
+            0% {
+                transform: translateX(100%);
+            }
+
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        @keyframes color-change {
+            0% {
+                color: rgb(255, 0, 0);
+            }
+
+            20% {
+                color: rgb(0, 255, 0);
+            }
+
+            40% {
+                color: rgb(0, 0, 255);
+            }
+
+            60% {
+                color: rgb(255, 255, 0);
+            }
+
+            80% {
+                color: rgb(0, 255, 255);
+            }
+
+            100% {
+                color: rgb(255, 0, 255);
+            }
+        }
+
+        @keyframes rainbow {
+            0% {
+                background-color: #ff000033;
+            }
+
+            /* Red */
+            16% {
+                background-color: #ff800044;
+            }
+
+            /* Orange */
+            33% {
+                background-color: #ffff004f;
+            }
+
+            /* Yellow */
+            50% {
+                background-color: #00ff0032;
+            }
+
+            /* Green */
+            66% {
+                background-color: #0000ff57;
+            }
+
+            /* Blue */
+            83% {
+                background-color: #4c008242;
+            }
+
+            /* Indigo */
+            100% {
+                background-color: #9400d355;
+            }
+
+            /* Violet */
+        }
+
+        #game-container {
+            width: 300px;
+            height: 800px;
+            margin: 0px auto 0px auto;
+            /* Added margin-top to ensure it is below header */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(52, 7, 64, 0.443);
+            border-radius: 10px;
+            position: relative;
+            /* Ensure controls are positioned relative to this container */
+            animation: rainbow 1s linear infinite;
+            /* Apply the animation */
+        }
+
+        #high-score {
+            font-size: 1px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* laci */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .drawer {
+            width: 300px;
+            height: 100%;
+            background-color: #0000005c;
+            position: fixed;
+            top: 0;
+            left: -250px;
+            /* Hide most of the drawer initially */
+            transition: left 0.3s;
+            box-shadow: 2px 0 5px rgba(27, 2, 33, 0.5);
+            padding: 20px;
+            /* Add padding inside the drawer */
+        }
+
+        .drawer.open {
+            left: 0;
+            /* Show the drawer fully when opened */
+        }
+
+        .toggle-button {
+            position: absolute;
+            top: 20px;
+            left: 250px;
+            /* Button positioned to be visible when drawer is slightly visible */
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .deposit-button {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 30px;
+            /* Padding lebih besar untuk tombol */
+            background-color: #28a745;
+            /* Warna hijau untuk tombol Deposit */
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            /* Sudut membulat yang lebih besar */
+            font-size: 18px;
+            /* Ukuran font yang lebih besar */
+            font-weight: bold;
+            /* Membuat teks lebih tebal */
+            text-align: center;
+            /* Menyusun teks di tengah */
+            transition: background-color 0.3s;
+            /* Transisi saat hover */
+        }
+
+        .deposit-button:hover {
+            background-color: #218838;
+            /* Warna hijau gelap saat hover */
+        }
+
+        .deposit-form {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .deposit-form input {
+            padding: 15px;
+            /* Padding lebih besar */
+            font-size: 18px;
+            /* Ukuran font yang lebih besar */
+            width: 100%;
+            /* Lebar penuh agar pas dalam laci */
+            border: 2px solid #ccc;
+            /* Border abu-abu */
+            border-radius: 8px;
+            /* Sudut membulat yang lebih besar */
+            box-sizing: border-box;
+            /* Menghitung padding dan border dalam lebar total */
+            margin-bottom: 20px;
+            /* Jarak di bawah input */
+        }
+
+        .deposit-form input:focus {
+            border-color: #007bff;
+            /* Warna border biru saat fokus */
+            outline: none;
+            /* Menghilangkan outline default */
+        }
+
+        .deposit-form .deposit-button {
+            background-color: #6600ff;
+            /* Warna biru untuk tombol Submit */
+            padding: 15px 30px;
+            /* Padding lebih besar */
+            font-size: 20px;
+            /* Ukuran font yang lebih besar */
+            border-radius: 10px;
+            /* Sudut membulat yang lebih besar */
+            font-weight: bold;
+            /* Membuat teks lebih tebal */
+            text-align: center;
+            /* Menyusun teks di tengah */
+            transition: background-color 0.3s;
+            /* Transisi saat hover */
+        }
+
+        .deposit-form .deposit-button:hover {
+            background-color: #0056b3;
+            /* Warna biru gelap saat hover */
+        }
+
+        #click-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 50px;
+            height: 100%;
+            background-color: rgba(15, 2, 17, 0.434);
+            cursor: pointer;
+        }
+
+        #game-board {
+            width: 200px;
+            height: 400px;
+            margin: 20px auto;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(20, 1fr);
+        }
+
+        #next-piece {
+            width: 80px;
+            height: 80px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            margin: 20px auto;
+            border: 2px solid white;
+        }
+
+        .cell {
+            width: 20px;
+            height: 20px;
+            box-sizing: border-box;
+            background-color: transparent;
+        }
+
+        .cell.active {
+            border: 2px solid white;
+        }
+
+        #next-piece .cell {
+            border: none;
+        }
+
+        .cell.active.O {
+            background-color: #FF1493;
+        }
+
+        .cell.active.J {
+            background-color: #39FF14;
+        }
+
+        .cell.active.L {
+            background-color: #8A2BE2;
+        }
+
+        .cell.active.S {
+            background-color: #FF4500;
+        }
+
+        .cell.active.Z {
+            background-color: #FFFF00;
+        }
+
+        .cell.active.I {
+            background-color: #00FFFF;
+        }
+
+        .cell.active.T {
+            background-color: #000000;
+        }
+
+        #score {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px auto;
+            color: #ffffff;
+        }
+
+        #game-over {
+            font-size: 40px;
+            font-weight: bold;
+            color: red;
+            margin: px auto;
+            display: none;
+        }
+
+        #message {
+            font-size: 24px;
+            font-weight: bold;
+            color: green;
+            margin: 20px auto;
+            display: none;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        #start-button,
+        #pause-button,
+        #info-button,
+        #arrow-controls button {
+            background-color: #8b44be;
+            color: #fbfbfb;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            z-index: 5;
+            /* Ensure buttons are clickable */
+        }
+
+        #start-button:hover,
+        #pause-button:hover,
+        #info-button:hover,
+        #arrow-controls button:hover {
+            background-color: #0c84b7;
+        }
+
+        #pause-button {
+            background-color: #0d51b7;
+        }
+
+        #pause-button:hover {
+            background-color: #FF4500;
+        }
+
+        #arrow-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #arrow-controls button {
+            width: 50px;
+            /* Sesuaikan lebar tombol */
+            height: 50px;
+            /* Sesuaikan tinggi tombol */
+            font-size: 20px;
+            /* Sesuaikan ukuran font */
+        }
+
+        #arrow-controls .horizontal {
+            display: flex;
+        }
+
+        #arrow-controls .horizontal button {
+            margin: 0 5px;
+        }
+
+        #arrow-controls .vertical button {
+            margin: 5px;
+        }
+
+        #info-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            padding: 20px;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        #info-drawer.open {
+            transform: translateX(0);
+        }
+
+        #info-drawer .close-btn {
+            background: red;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        #visualizer-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: rgba(0, 0, 0, 0);
+            overflow: hidden;
+        }
+
+        #visualizer {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar {
+            width: 40px;
+            height: 100px;
+            background-color: rgba(0, 0, 0, 0.262);
+            margin: 0 1px;
+            transition: height 0.1s ease, background-color 0.1s ease;
+        }
+
+
+        .bar:nth-child(even) {
+            background: rgba(46, 2, 2, 0.8);
+        }
+
+        #left-text,
+        #right-text {
+            position: fixed;
+            top: 50%;
+            transform-origin: center;
+            font-size: calc(12px + 2vw);
+            /* Ukuran font responsif berdasarkan lebar viewport */
+            font-weight: bold;
+            color: white;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        /* Teks di sisi kiri */
+        #left-text {
+            left: 0;
+            transform: rotate(-90deg) translateY(-50%);
+        }
+
+        /* Teks di sisi kanan */
+        #right-text {
+            right: 0;
+            transform: rotate(90deg) translateY(50%);
+        }
+
+        /* Media queries untuk penyesuaian lebih lanjut pada perangkat kecil */
+        @media (max-width: 600px) {
+
+            #left-text,
+            #right-text {
+                font-size: calc(10px + 3vw);
+                /* Menyesuaikan ukuran font pada perangkat kecil */
+            }
+        }
+
+        #deposit-form {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #deposit-form input {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            /* Adjust width to fit inside the drawer */
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="drawer" id="drawer">
+        <button class="deposit-button" onclick="showDepositForm()">TOP UP</button>
+        <div class="deposit-form" id="depositForm">
+            <input type="number" placeholder="Enter amount" min="0" max="1000" id="amountInput" maxlength="4"
+                oninput="validateInput(this)">
+            <button class="deposit-button" onclick="submitDeposit()">Submit</button>
+        </div>
+    </div>
+
+
+    <div id="drawer">
+        <!-- Isi dari laci -->
+        <p>LACI</p>
+        <button id="deposit-button">TOP UP</button>
+
+    </div>
+
+    <div id="click-area"></div>
+
+    <div id="header">
+        <h1>Tetris Game</h1>
+    </div>
+
+    <div id="left-text"></div>
+    <div id="right-text"></div>
+
+    <audio id="background-music" src="sound.mp3" loop></audio>
+    <div id="header">
+        <h1>Devloper by Muhammad Arifan Alfahri Tetris Geme di buat pada tanggal 30 Juli 2024 Bangka tengah</h1>
+    </div>
+    <div id="game-container">
+        <div id="high-score">High Score:0</div> <!-- Tambahkan elemen untuk rekor tertinggi -->
+        <div id="game-board"></div>
+        <div id="next-piece"></div>
+        <div id="score">Score: 0</div>
+        <div id="game-over" style="display: none;">Game Over!</div>
+        <div id="message"></div>
+        <div id="controls">
+            <button id="start-button" onclick="initGame()">Mulai</button>
+            <button id="pause-button" onclick="togglePause()">Pause</button>
+            <button id="info-button" onclick="showInfo()">Info</button>
+            <button id="start-music">Start Music</button>
+            <div id="arrow-controls">
+                <div id="info-drawer">
+                    <div id="info-content">
+                        <button id="close-info" onclick="closeInfo()">Close</button>
+                        <h2>Game Info</h2>
+                        <p>Ini adalah game Tetris. Gunakan tombol arah untuk menggerakkan dan memutar balok. Timpa 3
+                            balok random yang sama warnanya buat dapatin scor, dan kalo blok nya sampe ke atas GEME
+                            OVER. Gitu aja bree gampang
+                            KALIAN JUGA BISA DEPOSIT DI BAGIAN LACI KANAN, JIKA KALIAN INGIN TOP UP SILAHKAN DI MODE
+                            DESCTROP DULU BREE / MODE KOMPUTER.</p>
+                    </div>
+                </div>
+
+                <div class="vertical">
+                    <button onclick="rotatePiece()">↑</button>
+                </div>
+                <div class="horizontal">
+                    <button onclick="moveLeft()">←</button>
+                    <button onclick="moveRight()">→</button>
+                </div>
+                <div class="vertical">
+                    <button onclick="moveDown()">↓</button>
+                </div>
+            </div>
+        </div>
+        <div id="info-drawer">
+            <button class="close-btn" onclick="closeInfo()">Close</button>
+            <!-- Konten info yang dapat Anda tambahkan di sini -->
+        </div>
+    </div>
+    <div id="visualizer-container">
+        <div id="visualizer"></div>
+    </div>
+    <div id="star-container"></div>
+    <div class="rain" id="rain-container"></div>
+    <script>
+        function createRain() {
+            const rainContainer = document.createElement('div');
+            rainContainer.id = 'rain';
+            document.body.appendChild(rainContainer);
+
+            const colors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#33FFF5', '#F5FF33']; // Array warna-warni
+
+            for (let i = 0; i < 100; i++) { // Ubah angka 100 sesuai kebutuhan jumlah tetesan hujan
+                const raindrop = document.createElement('div');
+                raindrop.className = 'raindrop';
+                raindrop.style.left = `${Math.random() * 100}vw`;
+                raindrop.style.animationDuration = `${Math.random() * 2 + 1}s`;
+                raindrop.style.animationDelay = `${Math.random() * 5}s`;
+                raindrop.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)]; // Warna acak dari array colors
+                rainContainer.appendChild(raindrop);
+            }
+        }
+
+        window.onload = createRain;
+
+
+        function toggleDrawer() {
+            const drawer = document.getElementById('drawer');
+            drawer.classList.toggle('open');
+        }
+
+        function showDepositForm() {
+            const form = document.getElementById('depositForm');
+            form.style.display = 'block'; // Show the deposit form
+        }
+
+        function submitDeposit() {
+            const amount = document.getElementById('amountInput').value;
+            if (amount && amount > 0) {
+                alert(`You have deposited: $${amount}`);
+                // Optionally, hide the form again after submission
+                document.getElementById('depositForm').style.display = 'none';
+            } else {
+                alert('Please enter a valid amount.');
+            }
+        }
+        function validateInput(input) {
+            if (input.value.length > 4) {
+                input.value = input.value.slice(0, 4);
+            }
+        }
+        //laci//
+        document.getElementById('click-area').addEventListener('click', function () {
+            let drawer = document.getElementById('drawer');
+            if (drawer.style.left === '0px') {
+                drawer.style.left = '-250px';
+            } else {
+                drawer.style.left = '0';
+            }
+        });
+        document.getElementById('deposit-button').addEventListener('click', function () {
+            alert('Tombol Deposit diklik!');
+        });
+
+        // JavaScript game code
+
+        const GAME_WIDTH = 10;
+        const GAME_HEIGHT = 20;
+        const SCORE_PER_BLOCK = 1; // Skor per blok yang dihapus
+        const DROP_INTERVAL = 100; // Milliseconds
+        const MESSAGE_DURATION = 2000; // Durasi pesan dalam milliseconds
+
+        let score = 0;
+        let gameOver = false;
+        let gamePaused = false;
+        let board = [];
+        let currentPiece = null;
+        let nextPiece = null;
+        let currentX = 0;
+        let currentY = 0;
+        let dropTimeout;
+
+        function initGame() {
+            score = 0;
+            board = Array.from({ length: GAME_HEIGHT }, () => Array(GAME_WIDTH).fill(0));
+            currentPiece = createPiece();
+            nextPiece = createPiece();
+            currentX = Math.floor(GAME_WIDTH / 2) - 1;
+            currentY = 0;
+
+            renderBoard();
+            renderNextPiece();
+            gameOver = false;
+            gamePaused = false;
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('start-button').disabled = true;
+            document.getElementById('pause-button').disabled = false;
+            clearTimeout(dropTimeout);
+            updateGame();
+        }
+
+        function createPiece() {
+            const pieceTypes = [
+                { shape: [[1, 1], [1, 1]], type: 'O' }, // O
+                { shape: [[1, 0, 0], [1, 1, 1]], type: 'J' }, // J
+                { shape: [[0, 0, 1], [1, 1, 1]], type: 'L' }, // L
+                { shape: [[1, 1, 0], [0, 1, 1]], type: 'S' }, // S
+                { shape: [[0, 1, 1], [1, 1, 0]], type: 'Z' }, // Z
+                { shape: [[1], [1], [1], [1]], type: 'I' }, // I
+                { shape: [[0, 1, 0], [1, 1, 1]], type: 'T' }  // T
+            ];
+            return pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
+        }
+
+        function renderBoard() {
+            const boardElement = document.getElementById('game-board');
+            boardElement.innerHTML = '';
+            for (let i = 0; i < GAME_HEIGHT; i++) {
+                for (let j = 0; j < GAME_WIDTH; j++) {
+                    const cellElement = document.createElement('div');
+                    cellElement.className = 'cell';
+                    if (board[i][j] !== 0) {
+                        cellElement.className += ` active ${board[i][j]}`;
+                    }
+                    boardElement.appendChild(cellElement);
+                }
+            }
+
+            // Render current piece
+            for (let i = 0; i < currentPiece.shape.length; i++) {
+                for (let j = 0; j < currentPiece.shape[i].length; j++) {
+                    if (currentPiece.shape[i][j] === 1) {
+                        const x = currentX + j;
+                        const y = currentY + i;
+                        if (x >= 0 && x < GAME_WIDTH && y >= 0 && y < GAME_HEIGHT) {
+                            const cellElement = boardElement.children[y * GAME_WIDTH + x];
+                            cellElement.className += ` active ${currentPiece.type}`;
+                        }
+                    }
+                }
+            }
+        }
+
+        function renderNextPiece() {
+            const nextPieceElement = document.getElementById('next-piece');
+            nextPieceElement.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const cellElement = document.createElement('div');
+                    cellElement.className = 'cell';
+                    if (nextPiece.shape[i] && nextPiece.shape[i][j] === 1) {
+                        cellElement.className += ` active ${nextPiece.type}`;
+                    }
+                    nextPieceElement.appendChild(cellElement);
+                }
+            }
+        }
+
+        function updateGame() {
+            if (gamePaused) return;
+
+            if (canMoveDown()) {
+                currentY++;
+            } else {
+                mergePiece();
+                removeMatchingColors();
+                currentPiece = nextPiece;
+                nextPiece = createPiece();
+                currentX = Math.floor(GAME_WIDTH / 2) - 1;
+                currentY = 0;
+
+                if (!canMove(0, 0)) {
+                    gameOver = true;
+                    document.getElementById('game-over').style.display = 'block';
+                    document.getElementById('start-button').disabled = false;
+                    document.getElementById('pause-button').disabled = true;
+                    return;
+                }
+            }
+
+            renderBoard();
+            renderNextPiece();
+            dropTimeout = setTimeout(updateGame, DROP_INTERVAL);
+        }
+
+        function canMoveDown() {
+            return canMove(0, 1);
+        }
+
+        function mergePiece() {
+            for (let i = 0; i < currentPiece.shape.length; i++) {
+                for (let j = 0; j < currentPiece.shape[i].length; j++) {
+                    if (currentPiece.shape[i][j] === 1) {
+                        board[currentY + i][currentX + j] = currentPiece.type;
+                    }
+                }
+            }
+        }
+
+        function removeMatchingColors() {
+            const visited = Array.from({ length: GAME_HEIGHT }, () => Array(GAME_WIDTH).fill(false));
+            let cellsToRemove = [];
+
+            function floodFill(x, y, color) {
+                const stack = [{ x, y }];
+                const cells = [];
+
+                while (stack.length > 0) {
+                    const { x, y } = stack.pop();
+                    if (x < 0 || x >= GAME_WIDTH || y < 0 || y >= GAME_HEIGHT) continue;
+                    if (visited[y][x] || board[y][x] !== color) continue;
+
+                    visited[y][x] = true;
+                    cells.push({ x, y });
+
+                    stack.push({ x: x + 1, y });
+                    stack.push({ x: x - 1, y });
+                    stack.push({ x, y: y + 1 });
+                    stack.push({ x, y: y - 1 });
+                }
+
+                return cells;
+            }
+
+            for (let i = 0; i < GAME_HEIGHT; i++) {
+                for (let j = 0; j < GAME_WIDTH; j++) {
+                    if (!visited[i][j] && board[i][j] !== 0) {
+                        const color = board[i][j];
+                        const connectedCells = floodFill(j, i, color);
+                        if (connectedCells.length >= 12) {
+                            cellsToRemove.push(...connectedCells);
+                        }
+                    }
+                }
+            }
+
+            cellsToRemove.forEach(({ x, y }) => {
+                board[y][x] = 0;
+            });
+
+            score += cellsToRemove.length * SCORE_PER_BLOCK;
+            document.getElementById('score').textContent = 'Score: ' + score;
+
+            renderBoard();
+        }
+
+        function showMessage(message) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = message;
+            messageElement.style.display = 'block';
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, MESSAGE_DURATION);
+        }
+
+        function canMove(offsetX, offsetY, piece = currentPiece.shape) {
+            for (let i = 0; i < piece.length; i++) {
+                for (let j = 0; j < piece[i].length; j++) {
+                    if (piece[i][j] === 1) {
+                        const x = currentX + j + offsetX;
+                        const y = currentY + i + offsetY;
+                        if (x < 0 || x >= GAME_WIDTH || y >= GAME_HEIGHT || (board[y] && board[y][x] !== 0)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (gameOver || gamePaused) return;
+            if (event.key === 'ArrowLeft') {
+                moveLeft();
+            } else if (event.key === 'ArrowRight') {
+                moveRight();
+            } else if (event.key === 'ArrowDown') {
+                moveDown();
+            } else if (event.key === 'ArrowUp') {
+                rotatePiece();
+            }
+        });
+
+        function moveLeft() {
+            if (canMove(-1, 0)) {
+                currentX--;
+                renderBoard();
+            }
+        }
+
+        function moveRight() {
+            if (canMove(1, 0)) {
+                currentX++;
+                renderBoard();
+            }
+        }
+
+        function moveDown() {
+            if (canMove(0, 1)) {
+                currentY++;
+                renderBoard();
+            }
+        }
+
+        function rotatePiece() {
+            const newPiece = currentPiece.shape[0].map((_, colIndex) => currentPiece.shape.map(row => row[colIndex]).reverse());
+
+            // Handle I piece rotation separately
+            if (currentPiece.type === 'I') {
+                if (newPiece.length === 1) {
+                    newPiece.push([1], [1], [1]);
+                } else {
+                    newPiece.length = 1;
+                }
+            }
+
+            if (canMove(0, 0, newPiece)) {
+                currentPiece.shape = newPiece;
+                renderBoard();
+            }
+        }
+
+        function togglePause() {
+            if (gamePaused) {
+                gamePaused = false;
+                updateGame();
+                document.getElementById('pause-button').textContent = 'Pause';
+            } else {
+                gamePaused = true;
+                clearTimeout(dropTimeout);
+                document.getElementById('pause-button').textContent = 'Resume';
+            }
+        }
+
+        document.getElementById('pause-button').addEventListener('click', togglePause);
+
+
+        function showInfo() {
+            document.getElementById('info-drawer').classList.add('open');
+        }
+
+        function closeInfo() {
+            document.getElementById('info-drawer').classList.remove('open');
+        }
+        // Start background music when page loads
+        window.addEventListener('load', () => {
+            const music = document.getElementById('background-music');
+            music.play();
+
+            document.getElementById('start-button').addEventListener('click', initGame);
+            document.getElementById('pause-button').addEventListener('click', () => {
+                gamePaused = !gamePaused;
+                document.getElementById('pause-button').textContent = gamePaused ? 'Resume' : 'Pause';
+                if (!gamePaused) updateGame();
+            });
+
+            document.getElementById('start-music').addEventListener('click', () => {
+                const music = document.getElementById('background-music');
+                if (music.paused) {
+                    music.play();
+                } else {
+                    music.pause();
+                }
+            });
+
+            // Start background music when page loads, but user interaction required
+            window.addEventListener('load', () => {
+                const music = document.getElementById('background-music');
+                document.getElementById('start-music').style.display = 'block'; // Show the button to start music
+            });
+
+        });
+        // Visualizer
+        function createVisualizer() {
+            const visualizer = document.getElementById('visualizer');
+            for (let i = 0; i < visualizer.offsetWidth / 4; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.left = `${i * 4}px`;
+                visualizer.appendChild(bar);
+            }
+        }
+
+        function updateVisualizer() {
+            const bars = document.querySelectorAll('#visualizer .bar');
+            bars.forEach(bar => {
+                const height = Math.random() * 100;
+                bar.style.height = `${height}px`;
+                const randomColor = `rgb(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)})`;
+                bar.style.backgroundColor = randomColor;
+            });
+        }
+
+        createVisualizer();
+        setInterval(updateVisualizer, 100);
+        let startX;
+
+        document.addEventListener('touchstart', function (e) {
+            startX = e.touches[0].clientX;
+        }, false);
+
+        document.addEventListener('touchmove', function (e) {
+            let currentX = e.touches[0].clientX;
+            let diffX = currentX - startX;
+
+            if (startX < 50 && diffX > 100) {
+                document.getElementById('drawer').style.left = '0';
+            }
+        }, false);
+
+        document.addEventListener('touchend', function (e) {
+            let drawer = document.getElementById('drawer');
+            if (drawer.style.left === '0px') {
+                setTimeout(function () {
+                    drawer.style.left = '-250px';
+                }, 3000); // Laci akan menutup otomatis setelah 3 detik
+            }
+        }, false);
+
+    </script>
+</body>
+
+</html>
